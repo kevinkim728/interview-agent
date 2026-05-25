@@ -1,4 +1,4 @@
-const MODEL = "gpt-realtime-2";
+const MODEL = "gpt-realtime-mini";
 
 class RealtimeClient {
     constructor() {
@@ -20,7 +20,7 @@ class RealtimeClient {
             const data = await tokenResponse.json();
             console.log("3. Full session data:", data);
 
-            const EPHEMERAL_KEY = data.client_secret.value;
+            const EPHEMERAL_KEY = data.client_secret;
             console.log("4. Ephemeral key:", EPHEMERAL_KEY);
 
             // Create peer connection
@@ -93,10 +93,8 @@ class RealtimeClient {
             await this.pc.setLocalDescription(offer);
             console.log("14. Set local description");
 
-            const baseUrl = "https://api.openai.com/v1/realtime";
-
             console.log("15. Sending offer to OpenAI...");
-            const sdpResponse = await fetch(`${baseUrl}?model=${MODEL}`, {
+            const sdpResponse = await fetch("https://api.openai.com/v1/realtime/calls", {
                 method: "POST",
                 body: offer.sdp,
                 headers: {
@@ -125,5 +123,33 @@ class RealtimeClient {
         } catch (error) {
             console.error("❌ Connection failed:", error);
         }
+    }
+
+    startRecording(userStream) {
+        // Create audio context for mixing
+        this.audioContext = new AudioContext();
+
+        // Create sources for both streams
+        this.userSource = this.audioContext.createMediaStreamSource(userStream);
+        this.aiSource = null; // Will be set when AI audio arrives
+
+        // Create destination for mixed audio
+        this.mixedDestination = this.audioContext.createMediaStreamDestination();
+
+        // Connect user audio to mixed stream
+        this.userSource.connect(this.mixedDestination);
+
+        // Start recording the mixed stream
+        this.mediaRecorder = new MediaRecorder(this.mixedDestination.stream);
+        this.recordedChunks = [];
+
+        this.mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+                this.recordedChunks.push(event.data);
+            }
+        };
+
+        this.mediaRecorder.start();
+        console.log("🎙️ Recording both sides started");
     }
 }
