@@ -173,10 +173,44 @@
             </ul>
         </div>
 
+        <div class="interview-controls">
+            <div id="status" class="status disconnected">
+                Status: Ready to Start
+            </div>
+
+            <button id="connectBtn" onclick="connect()">Start Interview</button>
+            <button id="disconnectBtn" onclick="disconnect()" disabled>End Interview</button>
+        </div>
+
         <div class="footer">
             <p>This interview will be analyzed for communication skills, relevant experience, and cultural fit.<br>
             A hiring manager will review your responses and contact you with next steps.</p>
         </div>
     </div>
+    <script src="webrtc_client.js"></script>
+    <script>
+        let client = null;
+
+        async function connect() {
+            client = new RealtimeClient();
+            client.connect();
+
+            document.getElementById('connectBtn').disabled = true;
+            document.getElementById('disconnectBtn').disabled = false;
+            document.getElementById('status').textContent = 'Status: Connecting...';
+            document.getElementById('status').className = 'status connecting';
+        }
+
+        async function disconnect() {
+            if (client) {
+                await client.disconnect();
+            }
+
+            document.getElementById('connectBtn').disabled = false;
+            document.getElementById('disconnectBtn').disabled = true;
+            document.getElementById('status').textContent = 'Status: Interview Complete - Processing Results...';
+            document.getElementById('status').className = 'status disconnected';
+        }
+    </script>
 </body>
 </html>
