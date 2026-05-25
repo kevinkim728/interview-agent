@@ -18,22 +18,16 @@ async def serve_html():
 async def create_session():
     try:
         response = requests.post(
-            'https://api.openai.com/v1/realtime/sessions',
+            'https://api.openai.com/v1/realtime/client_secrets',
             headers={
                 'Authorization': f'Bearer {os.getenv("OPENAI_API_KEY")}',
                 'Content-Type': 'application/json'
             },
             json={
-                'model': 'gpt-4o-mini-realtime-preview-2024-12-17',
-                'voice': 'alloy',
-                "temperature": 0.6,
-                'turn_detection': {
-                    'type': 'server_vad',
-                    'threshold': 0.5,
-                    'prefix_padding_ms': 300,
-                    'silence_duration_ms': 1500
-                },
-                'instructions': '''You are conducting a 10-15 minute screening interview for a professional position. Your goal is to assess communication skills, relevant experience, and basic qualifications before passing candidates to the hiring manager.
+                'session': {
+                    'type': 'realtime',
+                    'model': 'gpt-realtime-2',
+                    'instructions': '''You are conducting a 10-15 minute screening interview for a professional position. Your goal is to assess communication skills, relevant experience, and basic qualifications before passing candidates to the hiring manager.
 
 GREETING: The candidate will start by saying "Hello, I'm ready to start the interview." Always respond with exactly: "Hello! Thank you for your interest in our professional position. I'm here to conduct a brief screening interview with you today. Let's begin - tell me about your relevant work experience and what interests you about this role?"
 
@@ -65,7 +59,23 @@ CONVERSATION STYLE:
 - End interview when you have sufficient information or after 15 minutes
 
 
-Remember: This is a real interview that will be reviewed by a hiring manager. Treat the candidate professionally and give them a fair opportunity to showcase their qualifications.'''
+Remember: This is a real interview that will be reviewed by a hiring manager. Treat the candidate professionally and give them a fair opportunity to showcase their qualifications.''',
+                    'audio': {
+                        'input': {
+                            'turn_detection': {
+                                'type': 'semantic_vad',
+                                'eagerness': 'auto'
+                            },
+                            'noise_reduction': {
+                                'type': 'far_field'
+                            }
+                        },
+                        'output': {
+                            'voice': 'marin'
+                        }
+                    },
+                    'tracing': 'auto'
+                }
             }
         )
 
@@ -76,8 +86,8 @@ Remember: This is a real interview that will be reviewed by a hiring manager. Tr
             data = response.json() # Turns the response into a python dict just like json.loads() would do
             
             # Turns this specific part of the python dict back to JSON to return to the front end
-            return JSONResponse({ 
-                "client_secret": data.get('client_secret')
+            return JSONResponse({
+                "client_secret": data.get('value')
             })
         else:
             return JSONResponse({
