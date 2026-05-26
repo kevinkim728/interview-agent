@@ -125,17 +125,18 @@ def create_labeled_transcript(whisper_result, diarization):
     segments = whisper_result["segments"]
     labeled_parts = []
 
-    first_speaker = None
-    for turn, _, spk in diarization.itertracks(yield_label=True):
-        first_speaker = spk
+    interviewer = None
+    for turn, _, spk in diarization.itertracks(yield_label=True): # turn gets the time someone spoke, spk gets the speaker label
+        interviewer = spk # gets the first speaker and assigns it to a variable
         break
 
+    # Checks to see if the first person said less than 20 words. If it did then change the first speaker to the interviewer
     if segments:
         first_text = segments[0]["text"].strip()
         if len(first_text) < 20:
-            for turn, _, spk in diarization.itertracks(yield_label=True):
-                if spk != first_speaker:
-                    first_speaker = spk
+            for turn, _, spk in diarization.itertracks(yield_label=True): # Loop to see if the first speaker was the interviewr
+                if spk != interviewer:
+                    interviewer = spk
                     break
 
     for segment in segments:
@@ -143,10 +144,10 @@ def create_labeled_transcript(whisper_result, diarization):
         end_time = segment["end"]
         text = segment["text"]
 
-        speaker = "INTERVIEWER" if spk == first_speaker else "CANDIDATE"
+        speaker = "INTERVIEWER" if spk == interviewer else "CANDIDATE"
         for turn, _, spk in diarization.itertracks(yield_label=True):
             if turn.start <= start_time <= turn.end:
-                speaker = "INTERVIEWER" if spk == first_speaker else "CANDIDATE"
+                speaker = "INTERVIEWER" if spk == interviewer else "CANDIDATE"
                 break
 
         labeled_parts.append(f"{speaker}: {text}")
@@ -192,17 +193,20 @@ async def save_interview(audio: UploadFile = File(...)): # FastAPI executes this
         print(f"✅ Conversion complete: {wav_filename}")
 
         print("🎯 Starting transcription...")
-        result = whisper_model.transcribe(wav_path) # Where the transctiption happens
-        raw_transcript = result["text"]
+        result = whisper_model.transcribe(wav_path) # Where the whisper transctiption happens
         print("✅ Transcription complete")
 
+        print("🎯 Starting speaker diarization...")
+        diarization = diarization_pipeline(wav_path) # Runs the pyannote on the WAV file and returns diarization object with speaker turns and timestamps
+        labeled_transcript = create_labeled_transcript(result, diarization)
+        print("✅ Speaker diarization complete")
 
         return JSONResponse({
             "success": True,
             "audio_saved": webm_filename,
             "wav_created": wav_filename,
-            "transcript": raw_transcript,
-            "message": "Audio saved and transcribed"
+            "transcript": labeled_transcript,
+            "message": "Audio saved, transcribed, and diarized"
         })
 
     except Exception as e:
