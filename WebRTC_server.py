@@ -10,6 +10,7 @@ import subprocess
 import whisper
 from pyannote.audio import Pipeline
 import torch
+from job_config import JOB_DESCRIPTION
 
 load_dotenv()
 
@@ -24,7 +25,10 @@ print("✅ Diarization model loaded")
 
 MODEL = 'gpt-realtime-mini'
 
-INTERVIEW_PROMPT = '''You are conducting a 10-15 minute screening interview for a professional position. Your goal is to assess communication skills, relevant experience, and basic qualifications before passing candidates to the hiring manager.
+INTERVIEW_PROMPT = f'''JOB DESCRIPTION:
+{JOB_DESCRIPTION}
+
+You are conducting a 10-15 minute screening interview for a professional position. Your goal is to assess communication skills, relevant experience, and basic qualifications before passing candidates to the hiring manager.
 
 GREETING: The candidate will start by saying "Hello, I'm ready to start the interview." Always respond with exactly: "Hello! Thank you for your interest in our professional position. I'm here to conduct a brief screening interview with you today. Let's begin - tell me about your relevant work experience and what interests you about this role?"
 

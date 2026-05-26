@@ -3,13 +3,17 @@ from typing import List
 from openai import AsyncOpenAI
 import os
 from dotenv import load_dotenv
+from job_config import JOB_DESCRIPTION
 
 load_dotenv()
 
 client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 model = "gpt-4o-mini"
 
-ANALYZER_PROMPT = """You are a hiring manager analyzing a screening interview transcript. Evaluate the candidate critically and objectively — do not give credit for vague, generic, or rehearsed answers. Only reference what is actually in the transcript — do not invent or assume.
+ANALYZER_PROMPT = f"""You are a hiring manager analyzing a screening interview transcript. Evaluate the candidate critically and objectively — do not give credit for vague, generic, or rehearsed answers. Only reference what is actually in the transcript — do not invent or assume.
+
+JOB DESCRIPTION:
+{JOB_DESCRIPTION}
 
 If the transcript contains no meaningful candidate responses (only greetings, silence, or very brief exchanges), return all scores as 0.0, empty lists for highlights/concerns/red_flags, recommendation as "INSUFFICIENT_DATA", and a summary explaining why.
 
@@ -26,6 +30,7 @@ class InterviewAnalysis(BaseModel):
     communication_score: float = Field(description="Score from 0.0 to 1.0 rating how clearly the candidate communicates their ideas. Judge on whether answers are coherent, well-structured, and easy to follow. A score of 1.0 is achievable for any candidate whose ideas come across clearly.")
     engagement_score: float = Field(description="Score from 0.0 to 1.0 rating how interested the candidate appears in this specific role. Judge on whether they asked thoughtful questions, referenced specific aspects of the role or company, and gave answers tailored to this position rather than generic responses. A score of 1.0 is achievable for any candidate who demonstrates genuine interest through the substance of what they said.")
     specificity_score: float = Field(description="Score from 0.0 to 1.0 rating use of concrete examples from past experience. A score of 1.0 is achievable when the candidate provides specific examples that directly relate to the role.")
+    qualification_score: float = Field(description="Score from 0.0 to 1.0 rating how well the candidate's experience and answers match the requirements in the job description. A score of 1.0 is achievable for a candidate who clearly meets the stated qualifications.")
     highlights: List[str] = Field(description="List of strong moments or impressive answers that demonstrate fit for the role")
     concerns: List[str] = Field(description="List of areas of concern or weak answers that raise doubts about the candidate's fit")
     red_flags: List[str] = Field(description="List of serious issues that may disqualify the candidate from the role")
