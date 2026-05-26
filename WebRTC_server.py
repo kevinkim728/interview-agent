@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 import uvicorn
 import os
 import requests
+import time
+from fastapi import UploadFile, File
 
 load_dotenv()
 
@@ -53,7 +55,7 @@ async def serve_html():
 
 # Creates the openAI session
 @app.get('/session')
-async def create_session(): # FastAPI executes this function automatically whenever a get request is made
+async def create_session(): # FastAPI executes this function automatically whenever a GET request is made
     
     #Loads up the model. The post request to OpenAI returns a ClientSecretCreateResponse.
     try:
@@ -104,6 +106,30 @@ async def create_session(): # FastAPI executes this function automatically whene
             }, status_code=500)
     except Exception as e:
         print(f"Exception: {e}")
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+@app.post('/save-interview')
+async def save_interview(audio: UploadFile = File(...)): # FastAPI executes this function automatically whenever a POST request is made
+    try:
+        timestamp = int(time.time())
+        webm_filename = f"interview_{timestamp}.webm"
+        webm_path = os.path.join('interviews', webm_filename) # first argument is the folder name
+
+        os.makedirs('interviews', exist_ok=True)
+
+        contents = await audio.read() #.read() reads the raw binary contents of the uploaded file. Needed for audio
+        with open(webm_path, 'wb') as f:
+            f.write(contents)
+        print(f"📁 WebM file saved: {webm_filename}")
+
+        return JSONResponse({ # Turns the payload into json
+            "success": True,
+            "audio_saved": webm_filename,
+            "message": "Audio file received and saved"
+        })
+
+    except Exception as e:
+        print(f"❌ Error in save_interview: {str(e)}")
         return JSONResponse({"error": str(e)}, status_code=500)
 
 @app.get('/{filename:path}')
