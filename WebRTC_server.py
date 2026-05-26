@@ -7,8 +7,10 @@ import requests
 import time
 from fastapi import UploadFile, File
 import subprocess
+import whisper
 
 load_dotenv()
+whisper_model = whisper.load_model("base")
 
 MODEL = 'gpt-realtime-mini'
 
@@ -142,10 +144,22 @@ async def save_interview(audio: UploadFile = File(...)): # FastAPI executes this
             f.write(contents)
         print(f"📁 WebM file saved: {webm_filename}")
 
-        return JSONResponse({ # Turns the payload into json
+        print("🔄 Converting WebM to WAV...")
+        wav_path = convert_webm_to_wav(webm_path)
+        wav_filename = os.path.basename(wav_path)
+        print(f"✅ Conversion complete: {wav_filename}")
+
+        print("🎯 Starting transcription...")
+        result = whisper_model.transcribe(wav_path)
+        raw_transcript = result["text"]
+        print("✅ Transcription complete")
+
+        return JSONResponse({
             "success": True,
             "audio_saved": webm_filename,
-            "message": "Audio file received and saved"
+            "wav_created": wav_filename,
+            "transcript": raw_transcript,
+            "message": "Audio saved and transcribed"
         })
 
     except Exception as e:
