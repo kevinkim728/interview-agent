@@ -127,10 +127,10 @@ def create_labeled_transcript(whisper_result, diarization):
 
     interviewer = None
     for turn, _, spk in diarization.itertracks(yield_label=True): # turn gets the time someone spoke, spk gets the speaker label
-        interviewer = spk # gets the first speaker and assigns it to a variable
+        interviewer = spk # gets the first speaker and assigns it to a the interviewer variable
         break
 
-    # Checks to see if the first person said less than 20 words. If it did then change the first speaker to the interviewer
+    # Checks to see if the first person said less than 20 words. If it did then change the who is labeled the interviewer
     if segments:
         first_text = segments[0]["text"].strip()
         if len(first_text) < 20:
@@ -188,7 +188,7 @@ async def save_interview(audio: UploadFile = File(...)): # FastAPI executes this
         print(f"📁 WebM file saved: {webm_filename}")
 
         print("🔄 Converting WebM to WAV...")
-        wav_path = convert_webm_to_wav(webm_path)
+        wav_path = convert_webm_to_wav(webm_path) 
         wav_filename = os.path.basename(wav_path)
         print(f"✅ Conversion complete: {wav_filename}")
 
@@ -201,11 +201,26 @@ async def save_interview(audio: UploadFile = File(...)): # FastAPI executes this
         labeled_transcript = create_labeled_transcript(result, diarization)
         print("✅ Speaker diarization complete")
 
+        labeled_transcript_filename = f"interview_{timestamp}_labeled.txt"
+        labeled_transcript_path = os.path.join('interviews', labeled_transcript_filename)
+        with open(labeled_transcript_path, 'w') as f:
+            f.write(labeled_transcript)
+
+
         return JSONResponse({
             "success": True,
             "audio_saved": webm_filename,
             "wav_created": wav_filename,
+            "transcript_saved": labeled_transcript_filename,
             "transcript": labeled_transcript,
+            "message": "Audio saved, transcribed, diarized, and transcript saved"
+        })
+
+        return JSONResponse({
+            "success": True,
+            "audio_saved": webm_filename, # string of the webm file name
+            "wav_created": wav_filename, # string of the wev file name
+            "transcript": labeled_transcript, # transcript with diarization 
             "message": "Audio saved, transcribed, and diarized"
         })
 
