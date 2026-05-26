@@ -8,9 +8,19 @@ import time
 from fastapi import UploadFile, File
 import subprocess
 import whisper
+from pyannote.audio import Pipeline
+import torch
 
 load_dotenv()
+
 whisper_model = whisper.load_model("base")
+
+print("Loading speaker diarization model...")
+diarization_pipeline = Pipeline.from_pretrained(
+    "pyannote/speaker-diarization-3.1",
+    use_auth_token=os.getenv("HUGGINGFACE_TOKEN")
+)
+print("✅ Diarization model loaded")
 
 MODEL = 'gpt-realtime-mini'
 
@@ -111,6 +121,38 @@ async def create_session(): # FastAPI executes this function automatically whene
         print(f"Exception: {e}")
         return JSONResponse({"error": str(e)}, status_code=500)
 
+def create_labeled_transcript(whisper_result, diarization):
+    segments = whisper_result["segments"]
+    labeled_parts = []
+
+    first_speaker = None
+    for turn, _, spk in diarization.itertracks(yield_label=True):
+        first_speaker = spk
+        break
+
+    if segments:
+        first_text = segments[0]["text"].strip()
+        if len(first_text) < 20:
+            for turn, _, spk in diarization.itertracks(yield_label=True):
+                if spk != first_speaker:
+                    first_speaker = spk
+                    break
+
+    for segment in segments:
+        start_time = segment["start"]
+        end_time = segment["end"]
+        text = segment["text"]
+
+        speaker = "INTERVIEWER" if spk == first_speaker else "CANDIDATE"
+        for turn, _, spk in diarization.itertracks(yield_label=True):
+            if turn.start <= start_time <= turn.end:
+                speaker = "INTERVIEWER" if spk == first_speaker else "CANDIDATE"
+                break
+
+        labeled_parts.append(f"{speaker}: {text}")
+
+    return "\n".join(labeled_parts)
+
 def convert_webm_to_wav(webm_path):
     wav_path = webm_path.replace('.webm', '.wav')
 
@@ -150,9 +192,10 @@ async def save_interview(audio: UploadFile = File(...)): # FastAPI executes this
         print(f"✅ Conversion complete: {wav_filename}")
 
         print("🎯 Starting transcription...")
-        result = whisper_model.transcribe(wav_path)
+        result = whisper_model.transcribe(wav_path) # Where the transctiption happens
         raw_transcript = result["text"]
         print("✅ Transcription complete")
+
 
         return JSONResponse({
             "success": True,
