@@ -177,8 +177,9 @@
             <div id="status" class="status disconnected">
                 Status: Ready to Start
             </div>
-
-            <button id="connectBtn" onclick="connect()">Start Interview</button>
+            
+            <!-- This is where you push the botton to start and stop the interview -->
+            <button id="connectBtn" onclick="connect()">Start Interview</button> 
             <button id="disconnectBtn" onclick="disconnect()" disabled>End Interview</button>
         </div>
 
@@ -192,13 +193,13 @@
         let client = null;
 
         async function connect() {
-            client = new RealtimeClient();
-            client.connect();
+            client = new RealtimeClient(); //Creates an instance of RealtimeClient from webrtc_client.js
+            client.connect(); // Runs the connect method
 
-            document.getElementById('connectBtn').disabled = true;
-            document.getElementById('disconnectBtn').disabled = false;
-            document.getElementById('status').textContent = 'Status: Connecting...';
-            document.getElementById('status').className = 'status connecting';
+            document.getElementById('connectBtn').disabled = true; // Grabs the Start Interview button and disables it so you can't click it again
+            document.getElementById('disconnectBtn').disabled = false; // Enables the End of Interview button now that the interview has started
+            document.getElementById('status').textContent = 'Status: Connecting...'; // Changes the status to "connecting"
+            document.getElementById('status').className = 'status connecting'; // Changes the status box to yellow
         }
 
         async function disconnect() {

@@ -53,7 +53,9 @@ async def serve_html():
 
 # Creates the openAI session
 @app.get('/session')
-async def create_session():
+async def create_session(): # FastAPI executes this function automatically whenever a get request is made
+    
+    #Loads up the model. The post request to OpenAI returns a ClientSecretCreateResponse.
     try:
         response = requests.post(
             'https://api.openai.com/v1/realtime/client_secrets',
@@ -86,12 +88,12 @@ async def create_session():
         )
 
         print(f"Status: {response.status_code}")
-        print(f"Response: {response.text}")
+        print(f"Response: {response.text}") # Full json output of the OpenAI response
 
         if response.status_code == 200: # Checks if the response was successful
             data = response.json() # Turns the response into a python dict just like json.loads() would do
             
-            # Turns this specific part of the python dict back to JSON to return to the front end
+            # Turns the client_secret key and value back to JSON to return to the front end
             return JSONResponse({
                 "client_secret": data.get('value')
             })
