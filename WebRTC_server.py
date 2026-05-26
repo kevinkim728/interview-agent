@@ -64,17 +64,13 @@ Remember: This is a real interview that will be reviewed by a hiring manager. Tr
 
 app = FastAPI()
 
-# Home page
 @app.get('/')
 async def serve_html():
     print("Serving HTML...")
     return FileResponse('interview_agent.html')
 
-# Creates the openAI session
 @app.get('/session')
-async def create_session(): # FastAPI executes this function automatically whenever a GET request is made
-    
-    #Loads up the model. The post request to OpenAI returns a ClientSecretCreateResponse.
+async def create_session():
     try:
         response = requests.post(
             'https://api.openai.com/v1/realtime/client_secrets',
@@ -90,7 +86,7 @@ async def create_session(): # FastAPI executes this function automatically whene
                     'audio': {
                         'input': {
                             'turn_detection': {
-                                'type': 'semantic_vad', # figures out when the user is done talking
+                                'type': 'semantic_vad',
                                 'eagerness': 'low'
                             },
                             'noise_reduction': {
@@ -107,12 +103,10 @@ async def create_session(): # FastAPI executes this function automatically whene
         )
 
         print(f"Status: {response.status_code}")
-        print(f"Response: {response.text}") # Full json output of the OpenAI response
+        print(f"Response: {response.text}")
 
-        if response.status_code == 200: # Checks if the response was successful
-            data = response.json() # Turns the response into a python dict just like json.loads() would do
-            
-            # Turns the client_secret key and value back to JSON to return to the front end
+        if response.status_code == 200:
+            data = response.json()
             return JSONResponse({
                 "client_secret": data.get('value')
             })
@@ -160,9 +154,8 @@ def create_labeled_transcript(whisper_result, diarization):
 def convert_webm_to_wav(webm_path):
     wav_path = webm_path.replace('.webm', '.wav')
 
-    #Converts the recorded WebM audio file to a WAV file at 16kHz mono so Whisper can transcribe it.
     try:
-        subprocess.run([ # allows python to run terminal commands. 
+        subprocess.run([
             'ffmpeg', '-i', webm_path,
             '-ar', '16000',
             '-ac', '1',
@@ -177,15 +170,15 @@ def convert_webm_to_wav(webm_path):
         raise Exception("FFmpeg not found. Please install FFmpeg on your system.")
 
 @app.post('/save-interview')
-async def save_interview(audio: UploadFile = File(...)): # FastAPI executes this function automatically whenever a POST request is made
+async def save_interview(audio: UploadFile = File(...)):
     try:
         timestamp = int(time.time())
         webm_filename = f"interview_{timestamp}.webm"
-        webm_path = os.path.join('interviews', webm_filename) # first argument is the folder name
+        webm_path = os.path.join('interviews', webm_filename)
 
         os.makedirs('interviews', exist_ok=True)
 
-        contents = await audio.read() #.read() reads the raw binary contents of the uploaded file. Needed for audio
+        contents = await audio.read()
         with open(webm_path, 'wb') as f:
             f.write(contents)
         print(f"📁 WebM file saved: {webm_filename}")
@@ -196,11 +189,11 @@ async def save_interview(audio: UploadFile = File(...)): # FastAPI executes this
         print(f"✅ Conversion complete: {wav_filename}")
 
         print("🎯 Starting transcription...")
-        result = whisper_model.transcribe(wav_path) # Where the whisper transctiption happens
+        result = whisper_model.transcribe(wav_path)
         print("✅ Transcription complete")
 
         print("🎯 Starting speaker diarization...")
-        diarization = diarization_pipeline(wav_path) # Runs the pyannote on the WAV file and returns diarization object with speaker turns and timestamps
+        diarization = diarization_pipeline(wav_path)
         labeled_transcript = create_labeled_transcript(result, diarization)
         print("✅ Speaker diarization complete")
 

@@ -29,7 +29,7 @@ class RealtimeClient {
 
             // Set up audio playback for AI responses
             this.audioEl = document.createElement("audio"); // Creates an "audio" html tag that will be used later
-            this.audioEl.autoplay = true; // Whenever it gets audio it'll automatically play
+            this.audioEl.autoplay = true;
             document.body.appendChild(this.audioEl); // Appends the audio element to the end of the body of the HTML page
             console.log("6. Created audio element");
 
@@ -75,7 +75,7 @@ class RealtimeClient {
                         }
                     };
 
-                    this.dc.send(JSON.stringify(startMessage)); // Sends open AI the control message with role user
+                    this.dc.send(JSON.stringify(startMessage)); // Sends open AI the control message to start the interview
 
                     // Tell AI to respond to the startMessage
                     const responseMessage = {
@@ -156,7 +156,7 @@ class RealtimeClient {
             }
         };
 
-        this.mediaRecorder.start(); // starts the recording
+        this.mediaRecorder.start();
         console.log("🎙️ Recording both sides started");
     }
 
@@ -165,9 +165,9 @@ class RealtimeClient {
             this.mediaRecorder.onstop = async () => { // Event handler that waits for .stop() to be called before running
                 const audioBlob = new Blob(this.recordedChunks, { type: 'audio/wav' });
                 await this.saveInterview(audioBlob);
-                resolve(); // Ends the promise
+                resolve();
             };
-            this.mediaRecorder.stop(); // triggers the onstop.
+            this.mediaRecorder.stop();
         });
     }
 
