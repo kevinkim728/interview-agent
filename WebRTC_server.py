@@ -23,7 +23,7 @@ diarization_pipeline = Pipeline.from_pretrained(
 )
 print("✅ Diarization model loaded")
 
-MODEL = 'gpt-realtime-mini'
+MODEL = 'gpt-realtime-2'
 
 INTERVIEW_PROMPT = f'''JOB DESCRIPTION:
 {JOB_DESCRIPTION}

@@ -1,4 +1,4 @@
-const MODEL = "gpt-realtime-mini";
+const MODEL = "gpt-realtime-2";
 
 class RealtimeClient {
     constructor() {
